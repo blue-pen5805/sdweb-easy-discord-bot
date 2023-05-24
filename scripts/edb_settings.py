@@ -49,7 +49,7 @@ def read_t2i_settings_file():
         return yaml.safe_load(file)
 
 def read_i2i_settings_file():
-    with open(settings_t2i_filepath, "r", encoding="utf-8") as file:
+    with open(settings_i2i_filepath, "r", encoding="utf-8") as file:
         return yaml.safe_load(file)
 
 def init_setting_files():
