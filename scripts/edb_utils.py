@@ -7,9 +7,12 @@ def translate(text, api_key=None):
 
     translator = deepl.Translator(api_key)
     try:
-        return translator.translate_text(text, target_lang="EN-GB").text.lower()
+        return translator.translate_text(text, target_lang="EN-GB").text
     except:
         return text
+
+def normalize_text(text):
+    return text.lower().replace(': ', ':')
 
 def pil_to_discord_file(image):
     image_binary = BytesIO()

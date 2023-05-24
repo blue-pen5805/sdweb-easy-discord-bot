@@ -4,9 +4,9 @@ import logging
 import datetime
 
 from modules import shared
-from scripts.action import txt2img
-from scripts.settings import read_bot_settings, read_t2i_settings
-from scripts.utils import translate, pil_to_discord_file, logging, is_dm, is_active_channels, is_mentioned, is_triggered
+from scripts.edb_action import txt2img
+from scripts.edb_settings import read_bot_settings, read_t2i_settings
+from scripts.edb_utils import translate, normalize_text, pil_to_discord_file, logging, is_dm, is_active_channels, is_mentioned, is_triggered
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -49,7 +49,7 @@ class Client(discord.Client):
         user = message.author
 
         if not self.is_cooltime(user):
-            translated = translate(prompt, api_key=shared.opts.edb_deepl_api_key).replace('\n', ' ')
+            translated = normalize_text(translate(prompt, api_key=shared.opts.edb_deepl_api_key).replace('\n', ' '))
             logging(f'Generating {prompt} `{translated}` (request from {user})')
 
             reply_message = await message.reply(f"Generating **{prompt}** `{translated}`", silent=True)

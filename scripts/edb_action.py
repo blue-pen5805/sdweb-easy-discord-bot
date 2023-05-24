@@ -2,7 +2,7 @@ import gradio as gr
 
 import modules.shared as shared
 from modules import scripts
-from modules.shared import opts, cmd_opts
+from modules.shared import opts
 from modules.processing import StableDiffusionProcessingTxt2Img, process_images
 
 def init_default_script_args(script_runner):

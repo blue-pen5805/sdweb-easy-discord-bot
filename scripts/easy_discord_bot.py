@@ -1,7 +1,7 @@
 import gradio as gr
 
 from modules import script_callbacks, shared
-from scripts.bot import DiscordBot
+from scripts.edb_bot import DiscordBot
 
 discord_bot = DiscordBot()
 
