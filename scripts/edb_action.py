@@ -3,7 +3,7 @@ import gradio as gr
 import modules.shared as shared
 from modules import scripts
 from modules.shared import opts
-from modules.processing import StableDiffusionProcessingTxt2Img, process_images
+from modules.processing import StableDiffusionProcessingImg2Img, StableDiffusionProcessingTxt2Img, process_images
 
 def init_default_script_args(script_runner):
     #find max idx from the scripts in runner and generate a none array to init script_args
@@ -35,6 +35,33 @@ def txt2img(**kwargs):
     )
 
     script_runner = scripts.scripts_txt2img
+    p.scripts = script_runner
+    p.script_args = init_default_script_args(script_runner)
+
+    shared.state.begin()
+
+    processed = script_runner.run(p, *p.script_args)
+    if processed is None:
+        processed = process_images(p)
+
+    p.close()
+
+    shared.state.end()
+    shared.total_tqdm.clear()
+
+    return processed
+
+def img2img(**kwargs):
+    p = StableDiffusionProcessingImg2Img(
+        resize_mode=1,
+        sd_model=shared.sd_model,
+        outpath_samples=opts.outdir_samples or opts.outdir_txt2img_samples,
+        outpath_grids=opts.outdir_grids or opts.outdir_txt2img_grids,
+        seed_enable_extras=False,
+        **kwargs
+    )
+
+    script_runner = scripts.scripts_img2img
     p.scripts = script_runner
     p.script_args = init_default_script_args(script_runner)
 

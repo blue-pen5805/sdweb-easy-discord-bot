@@ -1,11 +1,14 @@
 import asyncio
+import traceback
+from io import BytesIO
 import discord
 import logging
 import datetime
+from PIL import Image
 
 from modules import shared
-from scripts.edb_action import txt2img
-from scripts.edb_settings import read_bot_settings, read_t2i_settings
+from scripts.edb_action import txt2img, img2img
+from scripts.edb_settings import read_bot_settings, read_t2i_settings, read_i2i_settings
 from scripts.edb_utils import translate, normalize_text, pil_to_discord_file, logging, is_dm, is_active_channels, is_mentioned, is_triggered
 
 intents = discord.Intents.default()
@@ -20,6 +23,7 @@ class Client(discord.Client):
     def reload_settings(self):
         self.bot_settings = read_bot_settings()
         self.t2i_settings = read_t2i_settings()
+        self.i2i_settings = read_i2i_settings()
 
     def is_cooltime(self, user):
         current_time = datetime.datetime.now()
@@ -37,11 +41,20 @@ class Client(discord.Client):
 
         return current_time
 
-    async def generate(self, prompt):
-        processed = txt2img(
-            **{'prompt': prompt},
-            **self.t2i_settings
-        )
+    async def generate(self, prompt, image = None):
+        if not image:
+            processed = txt2img(**{
+                **self.t2i_settings,
+                **{'prompt': prompt},
+            })
+        else:
+            processed = img2img(**{
+                **self.i2i_settings,
+                **{
+                    'init_images': [image],
+                    'prompt': prompt,
+                },
+            })
 
         return [processed.images, processed.infotexts]
 
@@ -53,7 +66,13 @@ class Client(discord.Client):
             logging(f'Generating {prompt} `{translated}` (request from {user})')
 
             reply_message = await message.reply(f"Generating **{prompt}** `{translated}`", silent=True)
-            [images, infotexts] = await self.generate(translated)
+            if message.attachments and message.attachments[0].content_type.startswith('image'):
+                data = await message.attachments[0].read()
+                image = Image.open(BytesIO(data))
+            else:
+                image = None
+
+            [images, infotexts] = await self.generate(translated, image=image)
 
             await reply_message.edit(
                 content=f"Generated **{prompt}** `{translated}`",
@@ -111,6 +130,7 @@ class Client(discord.Client):
 
         except Exception as e:
             print(e)
+            print(traceback.format_exc())
 
             return await message.reply('Failed to generate images!')
 
