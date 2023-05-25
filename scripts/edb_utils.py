@@ -7,8 +7,13 @@ def translate(text, api_key=None):
 
     translator = deepl.Translator(api_key)
     try:
-        return translator.translate_text(text, target_lang="EN-GB").text
-    except:
+        return translator.translate_text(
+            text,
+            target_lang=deepl.Language.ENGLISH_BRITISH,
+            preserve_formatting=True,
+        ).text
+    except Exception as e:
+        print(e)
         return text
 
 def normalize_text(text):
