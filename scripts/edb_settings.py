@@ -12,6 +12,12 @@ DEFAULT_BOT_SETTINGS = {
     'enable_on_dm': True,
     'enable_on_guild': True,
     'cooltime_second': 60,
+    'messages': {
+        'generate': "Generating **<prompt>** <translated>",
+        'complete': "Generated **<prompt>** <translated>",
+        'cooltime': "cooldown at <cooltime>",
+        'failed': "Failed to generate images!",
+    },
     'active_channels': [],
     'trigger_words': [
         '!gen',

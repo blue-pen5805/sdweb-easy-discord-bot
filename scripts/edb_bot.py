@@ -65,7 +65,9 @@ class Client(discord.Client):
             translated = normalize_text(translate(prompt, api_key=shared.opts.edb_deepl_api_key).replace('\n', ' '))
             logging(f'Generating {prompt} `{translated}` (request from {user})')
 
-            reply_message = await message.reply(f"Generating **{prompt}** `{translated}`", silent=True)
+            generate_message = self.bot_settings['messages']['generate'].replace("<prompt>", prompt).replace("<translated>", translated)
+
+            reply_message = await message.reply(generate_message, silent=True)
             if message.attachments and message.attachments[0].content_type.startswith('image'):
                 data = await message.attachments[0].read()
                 image = Image.open(BytesIO(data))
@@ -74,14 +76,19 @@ class Client(discord.Client):
 
             [images, infotexts] = await self.generate(translated, image=image)
 
+            complete_message = self.bot_settings['messages']['complete'].replace("<prompt>", prompt).replace("<translated>", translated)
+
             await reply_message.edit(
-                content=f"Generated **{prompt}** `{translated}`",
+                content=complete_message,
                 attachments=[pil_to_discord_file(image) for image in images],
             )
 
             self.set_cooltime(user)
         else:
-            await message.reply(f"cooldown at {self.cooldown_at(user).strftime('%H:%M:%S')}", silent=True)
+
+            cooltime_message = self.bot_settings['messages']['cooltime'].replace("<cooltime>", self.cooldown_at(user).strftime('%H:%M:%S'))
+
+            await message.reply(cooltime_message, silent=True)
 
     # Event
     async def on_direct_message(self, message):
@@ -132,7 +139,7 @@ class Client(discord.Client):
             print(e)
             print(traceback.format_exc())
 
-            return await message.reply('Failed to generate images!')
+            return await message.reply(self.bot_settings['messages']["failed"])
 
 class DiscordBot:
     def __init__(self):
