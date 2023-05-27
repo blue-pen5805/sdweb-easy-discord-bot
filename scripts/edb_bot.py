@@ -56,7 +56,7 @@ class Client(discord.Client):
                 },
             })
 
-        return [processed.images, processed.infotexts]
+        return processed
 
     async def reply(self, message, prompt):
         user = message.author
@@ -74,13 +74,13 @@ class Client(discord.Client):
             else:
                 image = None
 
-            [images, infotexts] = await self.generate(translated, image=image)
+            p = await self.generate(translated, image=image)
 
             complete_message = self.bot_settings['messages']['complete'].replace("<prompt>", prompt).replace("<translated>", translated)
 
             await reply_message.edit(
                 content=complete_message,
-                attachments=[pil_to_discord_file(image) for image in images],
+                attachments=[pil_to_discord_file(image, p, p.all_seeds[i], p.all_prompts[i]) for i, image in enumerate(p.images)],
             )
 
             self.set_cooltime(user)

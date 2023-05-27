@@ -1,6 +1,11 @@
+import datetime
+import uuid
 from io import BytesIO
 import discord
 import deepl
+
+from modules.images import FilenameGenerator
+from modules.shared import opts
 
 def translate(text, api_key=None):
     if not api_key: return text
@@ -19,12 +24,16 @@ def translate(text, api_key=None):
 def normalize_text(text):
     return text.lower().replace(': ', ':')
 
-def pil_to_discord_file(image):
+def pil_to_discord_file(image, p, seed, prompt):
     image_binary = BytesIO()
     image.save(image_binary, 'webp', quality=85)
     image_binary.seek(0)
 
-    return discord.File(fp=image_binary, filename='image.webp')
+    namegen = FilenameGenerator(p, seed, prompt, image)
+    file_decoration = opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
+    filename = f"{namegen.apply(file_decoration)}.webp"
+
+    return discord.File(fp=image_binary, filename=filename)
 
 def logging(text):
     print(f'[DiscordBot] {text}')
