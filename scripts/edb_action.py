@@ -1,4 +1,5 @@
 import gradio as gr
+from modules.api.api import script_name_to_index
 
 import modules.shared as shared
 from modules import scripts
@@ -25,7 +26,18 @@ def init_default_script_args(script_runner):
                 script_args[script.args_from:script.args_to] = ui_default_values
     return script_args
 
-def txt2img(**kwargs):
+def get_selectable_script(script_name, script_runner):
+    if script_name is None or script_name == "":
+        return None
+
+    try:
+        script_idx = script_name_to_index(script_name, script_runner.selectable_scripts)
+
+        return script_idx + 1
+    except:
+        return 0
+
+def txt2img(script_name: str = '', **kwargs):
     p = StableDiffusionProcessingTxt2Img(
         sd_model=shared.sd_model,
         outpath_samples=opts.outdir_samples or opts.outdir_txt2img_samples,
@@ -37,6 +49,9 @@ def txt2img(**kwargs):
     script_runner = scripts.scripts_txt2img
     p.scripts = script_runner
     p.script_args = init_default_script_args(script_runner)
+    script_idx = get_selectable_script(script_name, script_runner)
+    if script_idx:
+        p.script_args[0] = script_idx
 
     shared.state.begin()
 
@@ -51,7 +66,7 @@ def txt2img(**kwargs):
 
     return processed
 
-def img2img(**kwargs):
+def img2img(script_name: str = '', **kwargs):
     p = StableDiffusionProcessingImg2Img(
         resize_mode=1,
         sd_model=shared.sd_model,
@@ -64,6 +79,9 @@ def img2img(**kwargs):
     script_runner = scripts.scripts_img2img
     p.scripts = script_runner
     p.script_args = init_default_script_args(script_runner)
+    script_idx = get_selectable_script(script_name, script_runner)
+    if script_idx:
+        p.script_args[0] = script_idx
 
     shared.state.begin()
 
