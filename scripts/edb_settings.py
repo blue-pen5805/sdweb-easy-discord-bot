@@ -105,7 +105,7 @@ def read_t2i_settings():
 def read_i2i_settings():
     return {
         **DEFAULT_I2I_SETTINGS,
-        **read_t2i_settings_file()
+        **read_i2i_settings_file()
     }
 
 init_setting_files()

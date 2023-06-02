@@ -22,7 +22,7 @@ def translate(text, api_key=None):
         return text
 
 def normalize_text(text):
-    return text.lower().replace(': ', ':')
+    return text.replace(': ', ':')
 
 def pil_to_discord_file(image, p, seed, prompt):
     image_binary = BytesIO()
