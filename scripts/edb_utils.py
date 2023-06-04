@@ -1,28 +1,58 @@
-import datetime
-import uuid
 from io import BytesIO
 import discord
+import openai
 import deepl
 
 from modules.images import FilenameGenerator
 from modules.shared import opts
 
-def translate(text, api_key=None):
-    if not api_key: return text
+def translate(text, deepl_api_key=None, chatgpt_api_key=None):
+    translated = None
+    if chatgpt_api_key:
+        translated = translate_with_chatgpt(text, api_key=chatgpt_api_key)
+    if deepl_api_key and not translated:
+        translated = translate_with_deepl(text, api_key=deepl_api_key)
+
+    if translated: return translated
+
+    return text
+
+def translate_with_deepl(text, api_key=None):
+    if not api_key: return None
 
     translator = deepl.Translator(api_key)
     try:
-        return translator.translate_text(
+        result = translator.translate_text(
             text,
             target_lang=deepl.Language.ENGLISH_BRITISH,
             preserve_formatting=True,
-        ).text
+        )
     except Exception as e:
         print(e)
-        return text
+        return None
+
+    return result.text
+
+def translate_with_chatgpt(text, api_key=None):
+    if not api_key: return None
+
+    try:
+        openai.api_key = api_key
+        completion = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                { "role": "system", "content": "You are translator. translate to English. keep English words and symbols(includes emojis and [,:,],@). Responses are only in translated text." },
+                { "role": "user", "content": text }
+            ]
+        )
+    except Exception as e:
+        print(e)
+        return None
+
+    return completion.choices[0]['message']['content']
 
 def normalize_text(text):
-    return text.replace(': ', ':')
+    return text.replace('\n', ' ').replace(': ', ':')
 
 def pil_to_discord_file(image, p, seed, prompt):
     image_binary = BytesIO()

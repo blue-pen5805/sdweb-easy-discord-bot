@@ -62,7 +62,13 @@ class Client(discord.Client):
         user = message.author
 
         if not self.is_cooltime(user):
-            translated = normalize_text(translate(prompt, api_key=shared.opts.edb_deepl_api_key).replace('\n', ' '))
+            translated = normalize_text(
+                translate(
+                    prompt,
+                    deepl_api_key=shared.opts.edb_deepl_api_key,
+                    chatgpt_api_key=shared.opts.edb_chatgpt_api_key,
+                )
+            )
             logging(f'Generating {prompt} `{translated}` (request from {user})')
 
             generate_message = self.bot_settings['messages']['generate'].replace("<prompt>", prompt).replace("<translated>", translated)

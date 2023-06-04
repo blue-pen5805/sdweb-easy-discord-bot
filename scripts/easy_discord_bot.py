@@ -13,6 +13,7 @@ def on_ui_settings():
     shared.opts.add_option("edb_enable_autostart", shared.OptionInfo(False, "Enable autostart", section=("easy_discord_bot", "EasyDiscordBot")))
     shared.opts.add_option("edb_discord_bot_token", shared.OptionInfo('', "Discord Bot Token", section=("easy_discord_bot", "EasyDiscordBot")))
     shared.opts.add_option("edb_deepl_api_key", shared.OptionInfo('', "DeepL Api Key", section=("easy_discord_bot", "EasyDiscordBot")))
+    shared.opts.add_option("edb_chatgpt_api_key", shared.OptionInfo('', "ChatGPT Api Key", section=("easy_discord_bot", "EasyDiscordBot")))
 
 def on_ui_tabs():
     with gr.Blocks() as discord_bot_tab:
