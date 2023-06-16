@@ -129,7 +129,7 @@ class Client(discord.Client):
         logging(f'logged in as {self.user}')
 
     async def on_message(self, message):
-        if message.author == self.user or not message.content: return
+        if message.author.bot or not message.content: return
 
         self.reload_settings()
         try:
