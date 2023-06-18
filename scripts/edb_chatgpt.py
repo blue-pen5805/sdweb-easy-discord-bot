@@ -35,7 +35,7 @@ def translate(prompt):
             functions=[functions()[0]],
             function_call="auto",
             temperature=1.25,
-            max_tokens=500,
+            max_tokens=1000,
         )
         function_call = response.choices[0]['message']['function_call']
         if function_call:
@@ -68,7 +68,7 @@ def writing(prompt) -> str|None:
             functions=[functions()[1]],
             function_call="auto",
             temperature=1.5,
-            max_tokens=500,
+            max_tokens=1000,
         )
         function_call = response.choices[0]['message']['function_call']
         if function_call:
