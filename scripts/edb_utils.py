@@ -4,14 +4,14 @@ import deepl
 
 from modules.images import FilenameGenerator
 from modules.shared import opts
-from scripts.edb_chatgpt import translate_with_chatgpt
+import scripts.edb_chatgpt as ChatGPT
 
 def translate(text, deepl_api_key=None, chatgpt_api_key=None):
     translated = None
     if text.isascii(): return text
 
     if chatgpt_api_key:
-        translated = translate_with_chatgpt(text, api_key=chatgpt_api_key)
+        translated = ChatGPT.request(text, api_key=chatgpt_api_key)
     if deepl_api_key and not translated:
         translated = translate_with_deepl(text, api_key=deepl_api_key)
 

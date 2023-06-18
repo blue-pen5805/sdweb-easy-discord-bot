@@ -1,0 +1,22 @@
+- name: translation
+  description: 与えられた文章を英語に翻訳します。また、文章の創作を要求しているかどうかを判定します。
+  parameters:
+    type: object
+    properties:
+      translated:
+        type: string
+        description: 翻訳後の文字列
+      need_to_create_text:
+        type: boolean
+        description: 文章の創作を要求しているか
+    required:
+      - translated
+      - need_to_create_text
+- name: writing
+  description: 与えられた文章を元に、新たな文章を創作します。
+  parameters:
+    type: object
+    properties:
+      text:
+        type: string
+        description: 創作された文章
