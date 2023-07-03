@@ -129,9 +129,12 @@ class Client(discord.Client):
         logging(f'logged in as {self.user}')
 
     async def on_message(self, message):
-        if message.author.bot or not message.content: return
+        if not message.content: return
 
         self.reload_settings()
+        if message.author.bot:
+            if message.author.id not in self.bot_settings['acceptable_bots']: return
+
         try:
             if is_dm(message):
                 return await self.on_direct_message(message)

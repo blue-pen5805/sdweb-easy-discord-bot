@@ -19,6 +19,7 @@ DEFAULT_BOT_SETTINGS = {
         'failed': "Failed to generate images!",
     },
     'active_channels': [],
+    'acceptable_bots': [],
     'trigger_words': [
         '!gen',
     ]
