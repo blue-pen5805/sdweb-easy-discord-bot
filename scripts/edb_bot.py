@@ -93,6 +93,8 @@ class Client(discord.Client):
                     attachments=[pil_to_discord_file(image, p, p.all_seeds[i], p.all_prompts[i]) for i, image in enumerate(p.images)],
                 )
 
+                await message.remove_reaction("\N{Squared OK}", self.user)
+
             asyncio.create_task(process(message, prompt))
         else:
             cooltime_message = self.bot_settings['messages']['cooltime'].replace("<cooltime>", self.cooldown_at(user).strftime('%H:%M:%S'))
