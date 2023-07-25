@@ -66,34 +66,38 @@ class Client(discord.Client):
             await message.add_reaction("\N{Squared OK}")
 
             async def process(message, prompt):
-                translated = normalize_text(
-                    translate(
-                        prompt,
-                        deepl_api_key=shared.opts.edb_deepl_api_key,
-                        chatgpt_api_key=shared.opts.edb_chatgpt_api_key,
+                try:
+                    translated = normalize_text(
+                        translate(
+                            prompt,
+                            deepl_api_key=shared.opts.edb_deepl_api_key,
+                            chatgpt_api_key=shared.opts.edb_chatgpt_api_key,
+                        )
                     )
-                )
-                logging(f'Generating {prompt} `{translated}` (request from {user})')
+                    logging(f'Generating {prompt} `{translated}` (request from {user})')
 
-                generate_message = self.bot_settings['messages']['generate'].replace("<prompt>", prompt).replace("<translated>", translated)
+                    generate_message = self.bot_settings['messages']['generate'].replace("<prompt>", prompt).replace("<translated>", translated)
 
-                reply_message = await message.reply(generate_message, silent=True)
-                if message.attachments and message.attachments[0].content_type.startswith('image'):
-                    data = await message.attachments[0].read()
-                    image = Image.open(BytesIO(data))
-                else:
-                    image = None
+                    reply_message = await message.reply(generate_message, silent=True)
+                    if message.attachments and message.attachments[0].content_type.startswith('image'):
+                        data = await message.attachments[0].read()
+                        image = Image.open(BytesIO(data))
+                    else:
+                        image = None
 
-                p = await self.generate(translated, image=image)
+                    p = await self.generate(translated, image=image)
 
-                complete_message = self.bot_settings['messages']['complete'].replace("<prompt>", prompt).replace("<translated>", translated)
+                    complete_message = self.bot_settings['messages']['complete'].replace("<prompt>", prompt).replace("<translated>", translated)
 
-                await reply_message.edit(
-                    content=complete_message,
-                    attachments=[pil_to_discord_file(image, p, p.all_seeds[i], p.all_prompts[i]) for i, image in enumerate(p.images)],
-                )
+                    await reply_message.edit(
+                        content=complete_message,
+                        attachments=[pil_to_discord_file(image, p, p.all_seeds[i], p.all_prompts[i]) for i, image in enumerate(p.images)],
+                    )
 
-                await message.remove_reaction("\N{Squared OK}", self.user)
+                    await message.remove_reaction("\N{Squared OK}", self.user)
+                except Exception as e:
+                    print(e)
+                    print(traceback.format_exc())
 
             asyncio.create_task(process(message, prompt))
         else:
