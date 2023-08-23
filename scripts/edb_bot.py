@@ -5,6 +5,8 @@ import discord
 import logging
 import datetime
 from PIL import Image
+import functools
+import typing
 
 from modules import shared
 from scripts.edb_action import txt2img, img2img
@@ -13,6 +15,12 @@ from scripts.edb_utils import translate, normalize_text, pil_to_discord_file, lo
 
 intents = discord.Intents.default()
 intents.message_content = True
+
+def to_thread(func: typing.Callable) -> typing.Coroutine:
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        return await asyncio.to_thread(func, *args, **kwargs)
+    return wrapper
 
 class Client(discord.Client):
     def __init__(self, *args, **kwargs):
@@ -41,7 +49,8 @@ class Client(discord.Client):
 
         return current_time
 
-    async def generate(self, prompt, image = None):
+    @to_thread
+    def generate(self, prompt, image = None):
         if not image:
             processed = txt2img(**{
                 **self.t2i_settings,
