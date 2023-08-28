@@ -41,7 +41,7 @@ class Client(discord.Client):
 
         return current_time
 
-    async def generate(self, prompt, image = None):
+    def generate(self, prompt, image = None):
         if not image:
             processed = txt2img(**{
                 **self.t2i_settings,
@@ -65,41 +65,42 @@ class Client(discord.Client):
             self.set_cooltime(user)
             await message.add_reaction("\N{Squared OK}")
 
-            async def process(message, prompt):
+            try:
+                translated = normalize_text(
+                    translate(
+                        prompt,
+                        deepl_api_key=shared.opts.edb_deepl_api_key,
+                        chatgpt_api_key=shared.opts.edb_chatgpt_api_key,
+                    )
+                )
+                logging(f'Generating {prompt} `{translated}` (request from {user})')
+
+                generate_message = self.bot_settings['messages']['generate'].replace("<prompt>", prompt).replace("<translated>", translated)
+
+                reply_message = await message.reply(generate_message, silent=True)
+                if message.attachments and message.attachments[0].content_type.startswith('image'):
+                    data = await message.attachments[0].read()
+                    image = Image.open(BytesIO(data))
+                else:
+                    image = None
+
+                p = self.generate(translated, image=image)
+                await asyncio.sleep(1)
+
+                complete_message = self.bot_settings['messages']['complete'].replace("<prompt>", prompt).replace("<translated>", translated)
+
+                await reply_message.edit(
+                    content=complete_message,
+                    attachments=[pil_to_discord_file(image, p, p.all_seeds[i], p.all_prompts[i]) for i, image in enumerate(p.images)],
+                )
+
                 try:
-                    translated = normalize_text(
-                        translate(
-                            prompt,
-                            deepl_api_key=shared.opts.edb_deepl_api_key,
-                            chatgpt_api_key=shared.opts.edb_chatgpt_api_key,
-                        )
-                    )
-                    logging(f'Generating {prompt} `{translated}` (request from {user})')
-
-                    generate_message = self.bot_settings['messages']['generate'].replace("<prompt>", prompt).replace("<translated>", translated)
-
-                    reply_message = await message.reply(generate_message, silent=True)
-                    if message.attachments and message.attachments[0].content_type.startswith('image'):
-                        data = await message.attachments[0].read()
-                        image = Image.open(BytesIO(data))
-                    else:
-                        image = None
-
-                    p = await self.generate(translated, image=image)
-
-                    complete_message = self.bot_settings['messages']['complete'].replace("<prompt>", prompt).replace("<translated>", translated)
-
-                    await reply_message.edit(
-                        content=complete_message,
-                        attachments=[pil_to_discord_file(image, p, p.all_seeds[i], p.all_prompts[i]) for i, image in enumerate(p.images)],
-                    )
-
                     await message.remove_reaction("\N{Squared OK}", self.user)
-                except Exception as e:
-                    print(e)
-                    print(traceback.format_exc())
-
-            asyncio.create_task(process(message, prompt))
+                except:
+                    pass
+            except Exception as e:
+                print(e)
+                print(traceback.format_exc())
         else:
             cooltime_message = self.bot_settings['messages']['cooltime'].replace("<cooltime>", self.cooldown_at(user).strftime('%H:%M:%S'))
 
