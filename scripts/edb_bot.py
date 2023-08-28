@@ -61,50 +61,57 @@ class Client(discord.Client):
     async def reply(self, message, prompt):
         user = message.author
 
-        if not self.is_cooltime(user):
-            self.set_cooltime(user)
-            await message.add_reaction("\N{Squared OK}")
+        sem = asyncio.Semaphore(1)
+        async with sem:
+            if not self.is_cooltime(user):
+                self.set_cooltime(user)
 
-            try:
-                translated = normalize_text(
-                    translate(
-                        prompt,
-                        deepl_api_key=shared.opts.edb_deepl_api_key,
-                        chatgpt_api_key=shared.opts.edb_chatgpt_api_key,
-                    )
-                )
-                logging(f'Generating {prompt} `{translated}` (request from {user})')
-
-                generate_message = self.bot_settings['messages']['generate'].replace("<prompt>", prompt).replace("<translated>", translated)
-
-                reply_message = await message.reply(generate_message, silent=True)
-                if message.attachments and message.attachments[0].content_type.startswith('image'):
-                    data = await message.attachments[0].read()
-                    image = Image.open(BytesIO(data))
-                else:
-                    image = None
-
-                p = self.generate(translated, image=image)
-                await asyncio.sleep(1)
-
-                complete_message = self.bot_settings['messages']['complete'].replace("<prompt>", prompt).replace("<translated>", translated)
-
-                await reply_message.edit(
-                    content=complete_message,
-                    attachments=[pil_to_discord_file(image, p, p.all_seeds[i], p.all_prompts[i]) for i, image in enumerate(p.images)],
-                )
+                await message.add_reaction("\N{Squared OK}")
+                activity = discord.Game(f"{user.display_name}のために生成中……")
+                await self.change_presence(activity=activity)
 
                 try:
-                    await message.remove_reaction("\N{Squared OK}", self.user)
-                except:
-                    pass
-            except Exception as e:
-                print(e)
-                print(traceback.format_exc())
-        else:
-            cooltime_message = self.bot_settings['messages']['cooltime'].replace("<cooltime>", self.cooldown_at(user).strftime('%H:%M:%S'))
+                    translated = normalize_text(
+                        translate(
+                            prompt,
+                            deepl_api_key=shared.opts.edb_deepl_api_key,
+                            chatgpt_api_key=shared.opts.edb_chatgpt_api_key,
+                        )
+                    )
+                    logging(f'Generating {prompt} `{translated}` (request from {user})')
 
-            await message.reply(cooltime_message, silent=True)
+                    generate_message = self.bot_settings['messages']['generate'].replace("<prompt>", prompt).replace("<translated>", translated).replace("<author>", user.mention)
+
+                    reply_message = await message.reply(generate_message, silent=True)
+                    if message.attachments and message.attachments[0].content_type.startswith('image'):
+                        data = await message.attachments[0].read()
+                        image = Image.open(BytesIO(data))
+                    else:
+                        image = None
+
+                    await asyncio.sleep(1)
+                    p = self.generate(translated, image=image)
+
+                    complete_message = self.bot_settings['messages']['complete'].replace("<prompt>", prompt).replace("<translated>", translated).replace("<author>", user.mention)
+
+                    await reply_message.edit(
+                        content=complete_message,
+                        attachments=[pil_to_discord_file(image, p, p.all_seeds[i], p.all_prompts[i]) for i, image in enumerate(p.images)],
+                    )
+
+                    try:
+                        await message.remove_reaction("\N{Squared OK}", self.user)
+                    except:
+                        pass
+                except Exception as e:
+                    print(e)
+                    print(traceback.format_exc())
+                finally:
+                    await self.change_presence(activity=None)
+            else:
+                cooltime_message = self.bot_settings['messages']['cooltime'].replace("<cooltime>", self.cooldown_at(user).strftime('%H:%M:%S'))
+
+                await message.reply(cooltime_message, silent=True)
 
     # Event
     async def on_direct_message(self, message):
@@ -166,7 +173,10 @@ class DiscordBot:
     def start(self, token):
         if self.client: return
 
-        self.client = Client(intents=intents)
+        self.client = Client(
+            intents=intents,
+            shard_count=1
+        )
         async def runner():
             async with self.client:
                 await self.client.start(token, reconnect=True)
